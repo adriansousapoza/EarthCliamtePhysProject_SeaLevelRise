@@ -134,3 +134,11 @@ print(np.mean(flat_samples,axis=0))
 
 np.savetxt("samples_dat_{}runs.csv".format(runs), samples, delimiter=",")
 np.savetxt("samples_dat_disc_{}runs.csv".format(runs), flat_samples, delimiter=",")
+
+
+
+
+
+
+
+
