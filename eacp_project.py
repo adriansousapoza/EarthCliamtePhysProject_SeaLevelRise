@@ -164,15 +164,12 @@ def plot_samples(ndim, samples, labels):
 
 def plot_check_emcee(flat_samples, size = 100):
     fig, ax = plt.subplots(dpi = 400)
-    inds = np.random.randint(flat_samples.shape[0]-1, size=size)
-    print(flat_samples.shape)
     a,b,tau,S0 = flat_samples[-1,-1,:4]
     ax.plot(x_mean, steric_model(temperature, a, b, tau, S0), "C1", alpha=0.1, 
-            label = '100 arbitrary samples')
-    for i in inds:
-        for j in range(flat_samples.shape[1]):
-            a,b,tau,S0 = flat_samples[i,j,:4]
-            ax.plot(x_mean, steric_model(temperature, a, b, tau, S0), "C1", alpha=0.1)
+            label = 'last {} samples'.format(size))
+    for i in range(size):
+        a,b,tau,S0 = flat_samples[-i,0,:4]
+        ax.plot(x_mean, steric_model(temperature, a, b, tau, S0), "C1", alpha=0.1)
     ax.plot(x_mean, y_mean, "k", label="historical data")
     ax.legend()
     ax.set_xlabel("year")
@@ -183,24 +180,24 @@ def plot_check_emcee(flat_samples, size = 100):
     plt.show()
     return True
 
-def plot_emcee_std():
-    fig, ax = plt.subplots(dpi = 400)
-    y1 = steric_model(temperature, mcmc[0,2], mcmc[1,2], mcmc[2,2], mcmc[3,2])
-    y2 = steric_model(temperature, mcmc[0,4], mcmc[1,4], mcmc[2,4], mcmc[3,4])
-    ax.plot(x_mean, steric_model(temperature, mcmc[0,3], mcmc[1,3], mcmc[2,3], mcmc[3,3]), "r", 
-            label = 'mean')
-    ax.plot(x_mean, steric_model(temperature, mcmc[0,2], mcmc[1,2], mcmc[2,2], mcmc[3,2]), "C1")
-    ax.plot(x_mean, steric_model(temperature, mcmc[0,4], mcmc[1,4], mcmc[2,4], mcmc[3,4]), "C1")
-    ax.fill_between(x_mean,y1,y2, color = "C1", alpha=.3, linewidth=0, label = '68.2%')
-    ax.plot(x_mean, y_mean, "k", label="historical")
-    ax.legend()
-    ax.set_xlabel("year")
-    ax.set_ylabel("metres")
-    ax.set_title("Global mean steric height (relative to Jan 2000)")
-    ax.grid()
-    fig.savefig('figures/plot_emcee_stdofvars.pdf', dpi=400)
-    plt.show()
-    return True
+# def plot_emcee_std():
+#     fig, ax = plt.subplots(dpi = 400)
+#     y1 = steric_model(temperature, mcmc[0,2], mcmc[1,2], mcmc[2,2], mcmc[3,2])
+#     y2 = steric_model(temperature, mcmc[0,4], mcmc[1,4], mcmc[2,4], mcmc[3,4])
+#     ax.plot(x_mean, steric_model(temperature, mcmc[0,3], mcmc[1,3], mcmc[2,3], mcmc[3,3]), "r", 
+#             label = 'mean')
+#     ax.plot(x_mean, steric_model(temperature, mcmc[0,2], mcmc[1,2], mcmc[2,2], mcmc[3,2]), "C1")
+#     ax.plot(x_mean, steric_model(temperature, mcmc[0,4], mcmc[1,4], mcmc[2,4], mcmc[3,4]), "C1")
+#     ax.fill_between(x_mean,y1,y2, color = "C1", alpha=.3, linewidth=0, label = '68.2%')
+#     ax.plot(x_mean, y_mean, "k", label="historical")
+#     ax.legend()
+#     ax.set_xlabel("year")
+#     ax.set_ylabel("metres")
+#     ax.set_title("Global mean steric height (relative to Jan 2000)")
+#     ax.grid()
+#     fig.savefig('figures/plot_emcee_stdofvars.pdf', dpi=400)
+#     plt.show()
+#     return True
 
 def plot_future(temp_fut, data):
     end = 2100
@@ -243,6 +240,12 @@ def plot_compare_models(temp_fut, temp_fut2, temp_fut3, x_fut, x_hist):
     ax.grid()
     fig.savefig('figures/compare_models_ssp.pdf', dpi = 400)
     plt.show()
+    print(y_ssp126[-1])
+    print(y_ssp245[-1])
+    print(y_ssp585[-1])
+    print(y_ssp126[-1]-ssp126_y_mean[-1])
+    print(y_ssp245[-1]-ssp245_y_mean[-1])
+    print(y_ssp585[-1]-ssp585_y_mean[-1])
     return True
 
 def determine_precentiles(sigmas, ndim):
@@ -257,7 +260,7 @@ def determine_precentiles(sigmas, ndim):
                                                      sigmas[1],
                                                      sigmas[2],])
         q = np.diff(mcmc[i,2:5])
-        txt = "\mathrm{{{3}}} = {0:.4f}_{{-{1:.4f}}}^{{+{2:.4f}}}"
+        txt = "{3} = {0:.6f}_{{-{1:.6f}}}^{{+{2:.6f}}}"
         txt = txt.format(mcmc[i,3], q[0], q[1], labels[i])
         print(txt)
         mean[i] = mcmc[i,3]
@@ -331,6 +334,64 @@ def plot_MSE(y, temp, method):
     plt.show()
     return True
 
+def plot_compare_params(temp_fut, temp_fut2, temp_fut3, x_fut, x_hist):
+    fig, ax = plt.subplots(dpi = 400)
+    y_ssp585 = steric_model(np.concatenate((temperature,temp_fut3),axis=None),
+                            mcmc[0,3], mcmc[1,3], mcmc[2,3], mcmc[3,3])[-len(x_fut):]
+    y_ssp585_1 = steric_model(np.concatenate((temperature,temp_fut3),axis=None),
+                            mcmc[0,5], mcmc[1,3], mcmc[2,3], mcmc[3,3])[-len(x_fut):]
+    y_ssp585_2 = steric_model(np.concatenate((temperature,temp_fut3),axis=None),
+                            mcmc[0,1], mcmc[1,3], mcmc[2,3], mcmc[3,3])[-len(x_fut):]
+    ax.plot(x_fut, y_ssp585_1, "r", label=r"$a = {}$".format(np.round(mcmc[0,5], decimals=2)))
+    ax.plot(x_fut, y_ssp585_2, "g", label=r"$a = {}$".format(np.round(mcmc[0,1], decimals=2)))
+    ax.plot(x_fut, y_ssp585, "C5", label=r"$a = {}$".format(np.round(mcmc[0,3], decimals=2)))
+    ax.plot(ssp585_x_mean, ssp585_y_mean, "C5--", label="ssp585")
+    ax.legend()
+    ax.set_xlabel("year")
+    ax.set_ylabel("metres")
+    ax.set_title("Future mean steric height (relative to Jan 2000)")
+    ax.grid()
+    fig.savefig('figures/params_a.pdf', dpi = 400)
+    plt.show()
+    
+    fig, ax = plt.subplots(dpi = 400)
+    y_ssp585 = steric_model(np.concatenate((temperature,temp_fut3),axis=None),
+                            mcmc[0,3], mcmc[1,3], mcmc[2,3], mcmc[3,3])[-len(x_fut):]
+    y_ssp585_1 = steric_model(np.concatenate((temperature,temp_fut3),axis=None),
+                            mcmc[0,3], mcmc[1,5], mcmc[2,3], mcmc[3,3])[-len(x_fut):]
+    y_ssp585_2 = steric_model(np.concatenate((temperature,temp_fut3),axis=None),
+                            mcmc[0,3], mcmc[1,1], mcmc[2,3], mcmc[3,3])[-len(x_fut):]
+    ax.plot(x_fut, y_ssp585_1, "r", label=r"$b = {}$".format(np.round(mcmc[1,5], decimals=2)))
+    ax.plot(x_fut, y_ssp585_2, "g", label=r"$b = {}$".format(np.round(mcmc[1,1], decimals=2)))
+    ax.plot(x_fut, y_ssp585, "C5", label=r"$b = {}$".format(np.round(mcmc[1,3], decimals=2)))
+    ax.plot(ssp585_x_mean, ssp585_y_mean, "C5--", label="ssp585")
+    ax.legend()
+    ax.set_xlabel("year")
+    ax.set_ylabel("metres")
+    ax.set_title("Future mean steric height (relative to Jan 2000)")
+    ax.grid()
+    fig.savefig('figures/params_b.pdf', dpi = 400)
+    plt.show()
+    
+    fig, ax = plt.subplots(dpi = 400)
+    y_ssp585 = steric_model(np.concatenate((temperature,temp_fut3),axis=None),
+                            mcmc[0,3], mcmc[1,3], mcmc[2,3], mcmc[3,3])[-len(x_fut):]
+    y_ssp585_1 = steric_model(np.concatenate((temperature,temp_fut3),axis=None),
+                            mcmc[0,3], mcmc[1,3], mcmc[2,5], mcmc[3,3])[-len(x_fut):]
+    y_ssp585_2 = steric_model(np.concatenate((temperature,temp_fut3),axis=None),
+                            mcmc[0,3], mcmc[1,3], mcmc[2,1], mcmc[3,3])[-len(x_fut):]
+    ax.plot(x_fut, y_ssp585_1, "r", label=r"$\tau = {}$".format(int(np.round(mcmc[2,5], decimals=0))))
+    ax.plot(x_fut, y_ssp585_2, "g", label=r"$\tau = {}$".format(int(np.round(mcmc[2,1], decimals=0))))
+    ax.plot(x_fut, y_ssp585, "C5", label=r"$\tau = {}$".format(int(np.round(mcmc[2,3], decimals=2))))
+    ax.plot(ssp585_x_mean, ssp585_y_mean, "C5--", label="ssp585")
+    ax.legend()
+    ax.set_xlabel("year")
+    ax.set_ylabel("metres")
+    ax.set_title("Future mean steric height (relative to Jan 2000)")
+    ax.grid()
+    fig.savefig('figures/params_tau.pdf', dpi = 400)
+    plt.show()
+
 ################################### main ###################################
 
 if __name__ == "__main__":
@@ -371,7 +432,7 @@ if __name__ == "__main__":
     plot_mean_fit(x_mean, y_mean,poly_func(x_mean, *popt), r'LSE fit to $ax^3 + bx^2 + cx + d$')
     
     popt, pcov = curve_fit(steric_model,temperature,y_mean)
-    print(popt)
+    print(np.round(popt,decimals=6), np.round(np.sqrt(np.diag(pcov)),decimals=5))
     plot_mean_fit(x_mean, y_mean,steric_model(temperature, *popt), r'LSE fit to steric model')
     
     
@@ -379,13 +440,13 @@ if __name__ == "__main__":
     emcee (data has been stored in the file samples_dat_disc.csv and samples_dat.csv)
     """
     ndim = 5
-    runs = 50000
+    runs = 5000
     var = 32
     flat_samples = np.loadtxt("samples_dat_disc_{}runs.csv".format(runs), delimiter=",")
     flat_samples = flat_samples.reshape(len(flat_samples)//var,var,ndim)
     samples = np.loadtxt("samples_dat_{}runs.csv".format(runs), delimiter=",").reshape(runs,var,ndim)
     
-    labels = ["a", "b", "tau", "S0", "sigma_SL"]
+    labels = ["a", "b", "tau", "S_0", "sigma_SL"]
     
     #plot_samples(ndim, samples, labels)
     plot_samples(ndim, flat_samples, labels)
@@ -396,9 +457,7 @@ if __name__ == "__main__":
     fig = corner.corner(flat_samples, labels=labels, truths = mean)
     plt.show()
     
-    plot_check_emcee(flat_samples, size = 100)
-    
-    plot_emcee_std()
+    #plot_check_emcee(flat_samples, size = 1000) #takes long!!!
     
     plot_future(temp_ssp126, 'ssp126')
     plot_future(temp_ssp245, 'ssp245')
@@ -414,3 +473,12 @@ if __name__ == "__main__":
     plot_MSE(ssp126_y_mean, temp_ssp126, 'ssp126')
     plot_MSE(ssp245_y_mean, temp_ssp245, 'ssp245')
     plot_MSE(ssp585_y_mean, temp_ssp585, 'ssp585')
+    
+    
+    plot_compare_params(temp_ssp126, temp_ssp245, temp_ssp585, x_fut, x_mean)
+    
+    
+    
+    
+    
+    
